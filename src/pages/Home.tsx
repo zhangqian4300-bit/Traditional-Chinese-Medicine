@@ -53,6 +53,17 @@ export default function Home() {
     }
   };
 
+  const renderParagraphs = (text: string) => {
+    if (!text) return null;
+    return text.split('\n').map((paragraph, index) => (
+      paragraph.trim() ? (
+        <p key={index} className="mb-2 last:mb-0 leading-relaxed">
+          {paragraph}
+        </p>
+      ) : null
+    ));
+  };
+
   const handleSubmit = async () => {
     if (!complaint) {
       alert('请输入主诉');
@@ -234,23 +245,27 @@ export default function Home() {
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-emerald-100 border-l-4 border-l-emerald-500">
                   <h2 className="text-xl font-bold text-gray-900 mb-2">诊断结论</h2>
                   <div className="text-2xl text-emerald-700 font-serif mb-3">{result.diagnosis.summary}</div>
-                  <p className="text-gray-600 leading-relaxed">{result.diagnosis.analysis}</p>
+                  <div className="text-gray-600 leading-relaxed">
+                    {renderParagraphs(result.diagnosis.analysis)}
+                  </div>
                 </div>
 
                 {/* 子午流注分析 */}
                 <div className="bg-indigo-50 rounded-xl shadow-sm p-6 border border-indigo-100">
-                  <h2 className="text-lg font-bold text-indigo-900 mb-3 flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-indigo-900 mb-4 flex items-center gap-2">
                     <Clock className="w-5 h-5" />
                     子午流注时相分析
                   </h2>
-                  <div className="flex items-start gap-4">
-                    <div className="bg-white p-3 rounded-lg shadow-sm text-center min-w-[100px]">
-                      <div className="text-sm text-gray-500">主时辰经脉</div>
-                      <div className="text-xl font-bold text-indigo-600">{result.midnight_noon_ebb_flow_analysis.main_meridian}</div>
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="bg-white p-5 rounded-xl shadow-sm text-center md:w-48 flex-shrink-0 border border-indigo-50 h-fit">
+                      <div className="text-sm text-gray-500 mb-2 font-medium">主时辰经脉</div>
+                      <div className="text-2xl font-bold text-indigo-600 break-words">
+                        {result.midnight_noon_ebb_flow_analysis.main_meridian}
+                      </div>
                     </div>
-                    <p className="text-indigo-800 text-sm leading-relaxed flex-1">
-                      {result.midnight_noon_ebb_flow_analysis.reasoning}
-                    </p>
+                    <div className="text-gray-700 text-base leading-relaxed flex-1 bg-white/60 p-5 rounded-xl border border-indigo-50/50">
+                      {renderParagraphs(result.midnight_noon_ebb_flow_analysis.reasoning)}
+                    </div>
                   </div>
                 </div>
 
@@ -276,7 +291,7 @@ export default function Home() {
                                 {item.method && <span className="text-sm font-normal text-gray-500 ml-2">({item.method})</span>}
                               </div>
                               {item.instruction && <div className="text-sm text-amber-600 mt-1">{item.instruction}</div>}
-                              <div className="text-sm text-gray-500 mt-1">{item.reason}</div>
+                              <div className="text-sm text-gray-500 mt-1">{renderParagraphs(item.reason)}</div>
                             </div>
                           </div>
                         ))}
