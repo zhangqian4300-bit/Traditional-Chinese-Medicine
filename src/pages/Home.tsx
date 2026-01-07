@@ -27,9 +27,15 @@ interface DiagnosisResult {
     reasoning: string;
   };
   treatment_recommendations: {
-    clinical: Array<{ type: string; name: string; method?: string; instruction?: string; reason: string }>;
+    clinical: Array<{ type: string; name: string; method?: string; instruction?: string; apply_time?: string; reason: string }>;
     lifestyle: string[];
     exercise: string[];
+    audio_therapy?: {
+      tone: string;
+      tracks: string[];
+      schedule: string[];
+      reason: string;
+    };
   };
 }
 
@@ -93,15 +99,19 @@ export default function Home() {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`请求失败 (${response.status})：服务器可能繁忙或超时，请稍后重试。`);
+      }
+
       const data = await response.json();
       if (data.success) {
         setResult(data.data);
       } else {
         alert('诊断失败: ' + data.error);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('网络错误');
+      alert(error.message || '网络错误，请检查连接');
     } finally {
       setLoading(false);
     }
@@ -278,18 +288,25 @@ export default function Home() {
                     <div>
                       <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">临床处方</h3>
                       <div className="grid gap-3">
-                        {result.treatment_recommendations.clinical.map((item, idx) => (
+                        {result.treatment_recommendations.clinical
+                          .filter(item => (visitTime ? !!item.apply_time && item.apply_time.includes(visitTime) : true))
+                          .map((item, idx) => (
                           <div key={idx} className="flex gap-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
                             <span className={`px-2 py-1 rounded text-xs font-medium h-fit ${
                               item.type === '穴位' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
                             }`}>
-                              {item.type}
+                              {item.type === '穴位' ? (visitTime ? `${visitTime}时` : '穴位') : '方剂'}
                             </span>
                             <div>
                               <div className="font-bold text-gray-900">
                                 {item.name} 
                                 {item.method && <span className="text-sm font-normal text-gray-500 ml-2">({item.method})</span>}
                               </div>
+                              {item.apply_time && (
+                                <div className="text-xs text-indigo-700 bg-indigo-100 inline-block px-2 py-1 rounded mt-1">
+                                  依据就诊时辰：{item.apply_time}
+                                </div>
+                              )}
                               {item.instruction && <div className="text-sm text-amber-600 mt-1">{item.instruction}</div>}
                               <div className="text-sm text-gray-500 mt-1">{renderParagraphs(item.reason)}</div>
                             </div>
@@ -298,7 +315,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       {/* 生活处方 */}
                       <div>
                         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">生活处方</h3>
@@ -318,6 +335,31 @@ export default function Home() {
                           ))}
                         </ul>
                       </div>
+                      {/* 音疗处方（平级板块） */}
+                      {result.treatment_recommendations.audio_therapy && (
+                        <div>
+                          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">音疗处方</h3>
+                          <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-xs font-medium text-white bg-indigo-600 px-2 py-1 rounded">
+                                {result.treatment_recommendations.audio_therapy.tone}
+                              </span>
+                              <span className="text-xs text-gray-600">五音对应</span>
+                            </div>
+                            <div className="text-sm text-gray-700">
+                              <div className="mb-2">
+                                曲目：{result.treatment_recommendations.audio_therapy.tracks.join('、')}
+                              </div>
+                              <div className="mb-2">
+                                时段：{result.treatment_recommendations.audio_therapy.schedule.join('、')}
+                              </div>
+                              <div>
+                                依据：{renderParagraphs(result.treatment_recommendations.audio_therapy.reason)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
